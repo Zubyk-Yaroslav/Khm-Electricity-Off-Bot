@@ -7,34 +7,28 @@ const isDev = process.env.NODE_ENV !== "production";
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ------------------- Функції -------------------
+// ------------------- Слідкування за новою картинкою -------------------
 
-// Безпечне відправлення тексту
-async function safeReply(ctx, msg) {
-  try {
-    if (isDev) {
-      console.log("DEV REPLY:", msg);
-    } else {
-      await ctx.reply(msg);
-    }
-  } catch (err) {
-    console.error(
-      "Не вдалося відправити текст:",
-      err.description || err.message,
-    );
-  }
-}
+// Зберігаємо останню картинку для кожного чату
+const lastImageByChat = new Map();
 
-// Формування підпису з датою
+// Формуємо підпис з датою
 function formatCaption(dateString) {
   return `Графік відключень на ${dateString}`;
 }
 
 // Безпечна відправка картинки
-async function sendImageSafe(ctx, imageUrl, caption) {
+async function sendImage(ctx, imageUrl, caption) {
   try {
     if (isDev) {
-      console.log("Відправляю картинку:", imageUrl, "Підпис:", caption);
+      console.log(
+        "Відправляю картинку:",
+        imageUrl,
+        "Підпис:",
+        caption,
+        "в чат:",
+        ctx.chat.id,
+      );
     } else {
       const response = await axios.get(imageUrl, {
         responseType: "arraybuffer",
@@ -46,57 +40,53 @@ async function sendImageSafe(ctx, imageUrl, caption) {
       );
     }
   } catch (err) {
-    if (err.response && err.response.error_code === 403) {
-      console.warn(
-        `Бот не може писати в чат ${ctx.chat.id}, ігнорую повідомлення.`,
-      );
-    } else {
-      console.error("Помилка при відправці картинки:", err.message);
-    }
+    console.error("Помилка при відправці картинки:", err.message);
   }
 }
 
-// ------------------- Слідкування за картинкою -------------------
-
-let lastImageUrl = null;
-
+// Перевірка та відправка нової картинки для конкретного чату
 async function checkForNewImage(ctx) {
   const pageUrl = "https://hoe.com.ua/page/pogodinni-vidkljuchennja";
   try {
     const { imageUrl, date } = await getFirstImageFromPage(pageUrl);
-
     if (!imageUrl) return;
 
-    // Відправляємо лише якщо картинка нова
-    if (imageUrl !== lastImageUrl) {
-      lastImageUrl = imageUrl;
+    const lastImage = lastImageByChat.get(ctx.chat.id);
+    console.log("Остання картинка для чату", ctx.chat.id, ":", lastImage);
+
+    // Відправляємо лише якщо картинка нова для цього чату
+    if (imageUrl !== lastImage) {
+      lastImageByChat.set(ctx.chat.id, imageUrl);
       const caption = formatCaption(date);
-      await sendImageSafe(ctx, imageUrl, caption);
+      await sendImage(ctx, imageUrl, caption);
     }
   } catch (err) {
     console.error("Помилка при перевірці графіка:", err.message);
   }
 }
 
-// Запуск слідкування
-async function startWatching(ctx) {
-  await checkForNewImage(ctx); // Відправляємо останню картинку одразу
-  setInterval(() => checkForNewImage(ctx), 60000); // Перевірка кожну хвилину
+// ------------------- Запуск слідкування -------------------
+
+// Використовуємо для кожного чату окремий інтервал
+function startWatching(ctx) {
+  checkForNewImage(ctx); // Відправляємо останню картинку одразу
+
+  // Перевірка оновлень кожну хвилину для цього чату
+  setInterval(() => checkForNewImage(ctx), 60000);
 }
 
 // ------------------- Бот -------------------
 
-bot.start(async (ctx) => {
-  await safeReply(
-    ctx,
-    "Привіт! Я бот для графіків відключень світла в Хмельницькій області.",
-  );
-  startWatching(ctx); // автоматично запускаємо слідкування
-});
+bot.start((ctx) => {
+  if (isDev) {
+    console.log("DEV REPLY: Привіт!");
+  } else {
+    ctx.reply(
+      "Привіт! Я бот для графіків відключень світла в Хмельницькій області.",
+    );
+  }
 
-// Додатково: безпечний обробник /schedule для ручної перевірки
-bot.command("schedule", async (ctx) => {
-  await checkForNewImage(ctx);
+  startWatching(ctx); // Автоматично запускаємо слідкування для цього чату
 });
 
 // ------------------- Запуск -------------------
