@@ -32,7 +32,7 @@ async function sendPhotoSafe(chatId, imageUrl, captionText) {
   } catch (e) {
     if (e.response?.error_code === 403) {
       console.log(`❌ Користувач заблокував бота: ${chatId}`);
-      await removeSubscriber(chatId);
+      await subscribers.delete(chatId);
     } else if (e.response?.error_code === 400) {
       console.error(`⚠️ Невалідне фото для ${chatId}:`, e.message);
     } else {
