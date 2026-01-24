@@ -1,20 +1,47 @@
 {
-  "name": "khm-electricity-off-bot",
+  "name": "power-outage-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Telegram бот для сповіщень про графіки відключень світла",
+  "main": "bot.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node bot.js",
+    "dev": "NODE_ENV=development nodemon bot.js",
+    "dev:pm2": "pm2 start ecosystem.config.js --only power-outage-bot-dev",
+    "prod": "NODE_ENV=production node bot.js",
+    "prod:pm2": "pm2 start ecosystem.config.js --only power-outage-bot-prod",
+    "stop:dev": "pm2 stop power-outage-bot-dev",
+    "stop:prod": "pm2 stop power-outage-bot-prod",
+    "restart:dev": "pm2 restart power-outage-bot-dev",
+    "restart:prod": "pm2 restart power-outage-bot-prod",
+    "logs:dev": "pm2 logs power-outage-bot-dev",
+    "logs:prod": "pm2 logs power-outage-bot-prod",
+    "status": "pm2 status",
+    "monit": "pm2 monit",
+    "delete": "pm2 delete all",
+    "save": "pm2 save",
+    "railway": "NODE_ENV=production node bot.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "telegram",
+    "bot",
+    "power-outage",
+    "notifications"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.13.2",
-    "cheerio": "^1.1.2",
-    "dotenv": "^17.2.3",
-    "telegraf": "^4.16.3",
-    "tesseract.js": "^7.0.0"
+    "axios": "^1.6.5",
+    "dotenv": "^16.3.1",
+    "telegraf": "^4.15.0",
+    "pg": "^8.11.3",
+    "tesseract.js": "^7.0.0",
+    "cheerio": "^1.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }
