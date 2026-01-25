@@ -154,18 +154,6 @@ bot.command("lastImage", async (ctx) => {
   }
 });
 
-bot.on("text", (ctx) => {
-  const text = ctx.message.text;
-  if (!text.startsWith("/")) {
-    ctx.reply(
-      "Доступні команди:\n\n" +
-        "/start — Підписатися на розсилку\n" +
-        "/stop — Відписатися\n" +
-        "/status — Переглянути статус",
-    );
-  }
-});
-
 bot.catch((err, ctx) => {
   console.error(`❌ Помилка для ${ctx.updateType}:`, err.message);
   if (isDev) console.error(err.stack);
